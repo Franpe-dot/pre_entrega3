@@ -156,7 +156,7 @@ financiera que otorga **solo créditos personales** (no hipotecarios ni prendari
 `main.py` imprime, para cada pregunta, los fragmentos recuperados con su distancia coseno
 antes de mostrar la respuesta final, para poder inspeccionar qué contexto recibió el modelo.
 
-### Ejemplo de salida esperada
+### Salida real (`ANTHROPIC_MODEL=claude-haiku-4-5-20251001`)
 
 ```
 ======================================================================
@@ -164,29 +164,44 @@ Prueba 1 — pregunta con respuesta en los documentos
 ======================================================================
 Pregunta: ¿A partir de cuántos días de atraso se deriva la deuda a cobranza judicial?
 
-Fragmentos recuperados para: '...'
-  distancia=0.1137 | fuente=03_mora_y_cobranzas.md | # Política de Mora y Cobranzas...
-  distancia=0.1384 | fuente=03_mora_y_cobranzas.md | ## Recargos por mora...
-  ...
+Fragmentos recuperados para: '¿A partir de cuántos días de atraso se deriva la deuda a cobranza judicial?'
+  distancia=0.1137 | fuente=03_mora_y_cobranzas.md | # Política de Mora y Cobranzas — FinCrece S.A.  ## Días de gracia  FinCrece S.A. otorga **5 días corridos de gracia** desde la fecha de vencimiento de...
+  distancia=0.1384 | fuente=03_mora_y_cobranzas.md | ## Recargos por mora  - **Interés punitorio:** 3% mensual adicional sobre el capital de la cuota vencida, que se  devenga desde el día 6 de atraso (fi...
+  distancia=0.1534 | fuente=04_refinanciacion_cancelacion.md | # Refinanciación y Cancelación Anticipada — FinCrece S.A.  ## Refinanciación de deudas en mora  - Un cliente puede solicitar la refinanciación de su d...
+  distancia=0.1754 | fuente=02_tasas_y_costos.md | ## Forma de pago  - Las cuotas son mensuales, iguales y consecutivas, bajo el sistema de amortización francés. - El pago puede realizarse por débito a...
 
-Respuesta:   A partir del día 91 de atraso, si la deuda no fue regularizada ni
-             refinanciada, el caso se deriva a cobranza judicial.
+Respuesta:   A partir del día 91 de atraso, si la deuda no fue regularizada ni refinanciada, el caso se deriva a cobranza judicial, iniciándose las acciones legales correspondientes a través del estudio jurídico externo de FinCrece S.A.
 Encontrado:  True
 Referencias:
-  - 03_mora_y_cobranzas.md: "A partir del día 91 de atraso [...] se deriva a cobranza judicial"
+  - 03_mora_y_cobranzas.md: A partir del día 91 de atraso: si la deuda no fue regularizada ni refinanciada, el caso se deriva a cobranza judicial, iniciándose las acciones legales correspondientes a través del estudio jurídico externo de FinCrece S.A.
 
 ======================================================================
 Prueba 2 — pregunta trampa (sin respuesta en los documentos)
 ======================================================================
 Pregunta: ¿Cuáles son los requisitos para acceder a un crédito hipotecario?
-...
+
+Fragmentos recuperados para: '¿Cuáles son los requisitos para acceder a un crédito hipotecario?'
+  distancia=0.1400 | fuente=01_otorgamiento.md | # Política de Otorgamiento de Créditos Personales — FinCrece S.A.  ## Alcance  FinCrece S.A. es una financiera que otorga **exclusivamente créditos pe...
+  distancia=0.1615 | fuente=01_otorgamiento.md | ## Proceso de evaluación  1. Solicitud inicial a través de sucursal, sitio web o call center. 2. Verificación de identidad y consulta en el Buró de Cr...
+  distancia=0.1658 | fuente=02_tasas_y_costos.md | ## Forma de pago  - Las cuotas son mensuales, iguales y consecutivas, bajo el sistema de amortización francés. - El pago puede realizarse por débito a...
+  distancia=0.1667 | fuente=04_refinanciacion_cancelacion.md | ## Requisitos para solicitar la refinanciación o la cancelación anticipada  1. Ser titular del crédito vigente en FinCrece S.A. 2. No tener otro proce...
+
 Respuesta:   No lo sé
 Encontrado:  False
 Referencias: (ninguna)
+
+======================================================================
+Bonus — ambas consultas en paralelo (asyncio.gather)
+======================================================================
+[True] ¿A partir de cuántos días de atraso se deriva la deuda a cobranza judicial?
+[False] ¿Cuáles son los requisitos para acceder a un crédito hipotecario?
 ```
 
-*(La salida real depende del modelo de Anthropic usado; el `respuesta` exacto puede variar
-en su redacción, pero `encontrado` y `referencias` deben cumplir lo anterior.)*
+En la prueba trampa, el retriever igualmente recupera fragmentos parecidos (requisitos y
+proceso de un crédito *personal*), pero el LLM no los usa para inventar una respuesta sobre
+créditos hipotecarios: respeta el prompt "filtro de veracidad" y responde `"No lo sé"` con
+`encontrado=False` y sin referencias, confirmando que el grounding funciona más allá de lo
+que trae el retriever.
 
 ## Estructura del repositorio
 
